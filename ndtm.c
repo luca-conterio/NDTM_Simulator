@@ -10,21 +10,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define TRUE   1
-#define FALSE  0
-#define RIGHT 'R';
-#define LEFT  'L';
-#define STOP  'S';
-#define BLANK '_';
+#define OK   			 1
+#define NO  			 0
+#define UNDEF			 2
+#define RIGHT 			'R'
+#define LEFT  			'L'
+#define STOP  			'S'
+#define BLANK 			'_'
+#define TERM_CHAR 		'@'
+#define INPUT_DIM		2000
+#define TAPE_DIM		2000
+#define STARTING_INDEX  500
 
 void initGraph();
 void readFile();
 void insertTransitionInGraph(int, char, char, char, int);
 void constructTrasitionsTree();
-void readAccStates();
-void readTransitionsNumberLimit();
-void readInputString();
-void execute();
+int execute(char *, int, int, int);
+int nextIndex(int, char);
 void printGraph();
 
 typedef struct s {     // node of the graph
@@ -35,15 +38,18 @@ typedef struct s {     // node of the graph
 	struct s * next;   // list of all possible next states of the current one
 } state;
 
-state * states[30];    // list containing all the states read from input
-int states_num = 0;    // the number of states of the TM
-int accStates[];	   // all passible acceptation states
-int iterationLimit;	   // the limit to the iteration number (to avoid machine loop)
-char inputString[100];
+state * states[30];       // list containing all the states read from input
+int states_num = 0;       // the number of states of the TM
+int accState;	     	  // all passible acceptation states
+int reject_state = -1;    // the state of rejection
+int iterationsLimit;	  // the limit to the iteration number (to avoid machine loop)
+char inputString[INPUT_DIM];    // current input string on the machine tape
+int length;
+char tape[TAPE_DIM];
 
-typedef struct tn {    // node of the computation tree
+typedef struct tn {       // node of the computation tree
 	int state;
-	char current_input[];
+	char tape[TAPE_DIM];
 	int index;
 	int height;
 	char in;
@@ -54,11 +60,35 @@ typedef struct tn {    // node of the computation tree
 int main(int argc, char *argv[]) {
 	initGraph();
 	readFile();
+	//printf("\nStates number: %d", states_num);
+	//printf("\nAcceptation states: %d", accState);
+	//printf("\nIterations limit: %d", iterationsLimit);
+	//printGraph();
+	
+	scanf("%s", inputString);
+	while (strcmp(inputString, "end") != 0) {
+		length = strlen(inputString);
+		for (int i = 0; i < STARTING_INDEX; i++)
+			tape[i] = BLANK;
+		strcpy(&tape[STARTING_INDEX], inputString);
+		for (int i = STARTING_INDEX+length; i < TAPE_DIM; i++)
+			tape[i] = BLANK;
+		tape[TAPE_DIM-1] = '\0';
 
-	printf("\nStates number: %d", states_num);
-	printGraph();
+		int result = execute(tape, STARTING_INDEX, 0, 1);
+		if (result == OK)
+			printf("1\n");
+		else if (result == NO)
+			printf("0\n");
+		else if (result == UNDEF)
+			printf("U\n");
+		scanf("%s", inputString);
+	}
 }
 
+/***************************************************************
+* Initializes states vector elements to NULL
+****************************************************************/
 void initGraph() {
 	for(int i = 0; i < 50; i++)
 		states[i] = NULL;
@@ -75,12 +105,12 @@ void readFile() {
 	char move = ' ';
 	int next_s = -1;
 	char in[5];
-	
-	scanf("%s", in); 
+
+	scanf("%s", in);
 	if (strcmp(in, "tr") != 0)
 		exit(0);
-		
-	scanf("%s", in); 
+
+	scanf("%s", in);
 	while (strcmp(in, "acc") != 0) { // cycle until find the word "acc"
 		sscanf(in, "%d", &s); 		 // read state
 		if (s >= states_num)		 // mantain the maximum state number
@@ -90,44 +120,128 @@ void readFile() {
 		scanf("%s", in);
 		outputChar = in[0];   		 // read output character
 		scanf("%s", in);
-		move = in[0];		  		 // read move
+		move = in[0];		  		 		 // read move
 		scanf("%s", in);
-		sscanf(in, "%d", &next_s);  // read next state
+		sscanf(in, "%d", &next_s); // read next state
 		insertTransitionInGraph(s, inputChar, outputChar, move, next_s);
-		//printf("OK -> %d%c%c%c%d\n", s, inputChar, outputChar, move, next_s);
 		scanf("%s", in);
 	}
+
+	int i = 0;
+	while (strcmp(in, "max") != 0 ) { // read acceptation states
+		scanf("%s", in);
+		sscanf(in, "%d", &accState);
+		i++;
+	}
+
+	scanf("%d", &iterationsLimit);    // read maximum number of iterations
+
+	scanf("%s", in);                  // read the word "run" to start computations
+	if (strcmp(in, "run") != 0)
+		exit(0);
 }
 
 /****************************************************************
 * Inserts the transition read from stdin in the transitions graph
 *****************************************************************/
+
+// NOTA: se aggiungessi sempre in testa nelle liste avrei costruzione del grafo in tempo costante
+
 void insertTransitionInGraph(int s, char in, char out, char m, int n_s) {
 	state * new = (state *) malloc(sizeof(state *));
 	if (new != NULL) {
-		printf("0");
 		new->next = NULL;
 		new->in = in;
 		new->out = out;
 		new->move = m;
 		new->next_state = n_s;
 	}
-	else { 
+	else {
 		printf("Error: not enough memory...");
 		exit(0);
 	}
-	
-	if (states[s] == NULL) {
+
+	if (states[s] == NULL) {   // insert when list is empty
 		states[s] = new;
 		new->next = NULL;
 		return;
 	}
-	
-	state *p = states[s];
-	while (p->next != NULL)
-		p = p->next;
-	p->next = new;
+
+	if (new->in <= states[s]->in) { // insert as first element
+		new->next = states[s];
+		states[s] = new;
+		return;
+	}
+
+	state *curr = states[s];          // insert in order (includes insertion as last)
+	state *succ = curr->next;
+	while (succ != NULL && new->in > succ->in) {
+		curr = succ;
+		succ = succ->next;
+	}
+	new->next = succ;
+	curr->next = new;
 	return;
+}
+
+/****************************************************************
+* Executes the Turing Machine
+*****************************************************************/
+int execute(char * tape, int index, int curr_state, int iteration) {
+	
+	char newTape[TAPE_DIM];
+	state *p = states[curr_state];
+	
+	if (curr_state == accState) {
+		/*printf("\n\n******************************************************");
+		printf("\n********************** ACCEPTED **********************");
+		printf("\n******************************************************");*/
+		return OK;
+	}
+
+	else if (iteration > iterationsLimit) {
+		/*printf("\n\n******************************************************");
+		printf("\n********************** UNDEFINED *********************");
+		printf("\n******************************************************");*/
+		return UNDEF;
+	}
+	
+	else if (curr_state == reject_state || states[curr_state] == NULL) {
+		/*printf("\n\n******************************************************");
+		printf("\n********************** REJECTED **********************");
+		printf("\n******************************************************");*/
+		return NO;
+	}
+		
+	while (p != NULL) {
+		if (p->in == tape[index]) {
+			strcpy(newTape, tape);
+			newTape[index] = p->out;
+			//printf("\n%d %c %c %c %d -> iteration: %d", curr_state, p->in, p->out, p->move, p->next_state, iteration);
+			//printf("\n%s", &tape[STARTING_INDEX]);
+			//printf("\n%s", &newTape[STARTING_INDEX]);
+			int result = execute(newTape, nextIndex(index, p->move), p->next_state, iteration+1);
+			if (result == OK)
+				return OK;
+			else if (result == UNDEF)
+				return UNDEF;
+		}
+		p = p->next;
+	}
+	return NO;
+}
+
+/***********************************************************************
+* Returns the next index in the tape, according to the transition move
+************************************************************************/
+int nextIndex(int i, char m) {
+	if (m == RIGHT)
+		 return i+1;
+	else if (m == LEFT)
+		 return i-1;
+	else if (m == STOP)
+		 return i;
+	return -1;
 }
 
 /****************************************************************
@@ -144,17 +258,3 @@ void printGraph() {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
