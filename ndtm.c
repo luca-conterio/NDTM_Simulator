@@ -23,12 +23,14 @@
 #define STARTING_INDEX  500
 
 void initGraph();
+void initTape();
 void readFile();
 void insertTransitionInGraph(int, char, char, char, int);
 void constructTrasitionsTree();
 int execute(char *, int, int, int);
 int nextIndex(int, char);
 void printGraph();
+void printTape(int, char *);
 
 typedef struct s {     // node of the graph
 	char in;
@@ -38,24 +40,14 @@ typedef struct s {     // node of the graph
 	struct s * next;   // list of all possible next states of the current one
 } state;
 
-state * states[30];       // list containing all the states read from input
-int states_num = 0;       // the number of states of the TM
-int accState;	     	  // all passible acceptation states
-int reject_state = -1;    // the state of rejection
-int iterationsLimit;	  // the limit to the iteration number (to avoid machine loop)
+state * states[30];       		// list containing all the states read from input
+int states_num = 0;       		// the number of states of the TM
+int accState;	     	  		// all passible acceptation states
+int reject_state = -1;    		// the state of rejection
+int iterationsLimit;	  		// the limit to the iteration number (to avoid machine loop)
 char inputString[INPUT_DIM];    // current input string on the machine tape
 int length;
 char tape[TAPE_DIM];
-
-typedef struct tn {       // node of the computation tree
-	int state;
-	char tape[TAPE_DIM];
-	int index;
-	int height;
-	char in;
-	char out;
-	char move;
-} treeNode;
 
 int main(int argc, char *argv[]) {
 	initGraph();
@@ -67,21 +59,12 @@ int main(int argc, char *argv[]) {
 	
 	scanf("%s", inputString);
 	while (strcmp(inputString, "end") != 0) {
-		length = strlen(inputString);
-		for (int i = 0; i < STARTING_INDEX; i++)
-			tape[i] = BLANK;
-		strcpy(&tape[STARTING_INDEX], inputString);
-		for (int i = STARTING_INDEX+length; i < TAPE_DIM; i++)
-			tape[i] = BLANK;
-		tape[TAPE_DIM-1] = '\0';
-
+		initTape();
 		int result = execute(tape, STARTING_INDEX, 0, 1);
-		if (result == OK)
-			printf("1\n");
-		else if (result == NO)
-			printf("0\n");
-		else if (result == UNDEF)
+		if (result == UNDEF)
 			printf("U\n");
+		else 
+			printf("%d\n", result);
 		scanf("%s", inputString);
 	}
 }
@@ -92,6 +75,19 @@ int main(int argc, char *argv[]) {
 void initGraph() {
 	for(int i = 0; i < 50; i++)
 		states[i] = NULL;
+}
+
+/*************************************************************************
+* Initializes tape with BLANK charaters before and after the input string
+**************************************************************************/
+void initTape() {
+	length = strlen(inputString);
+	for (int i = 0; i < STARTING_INDEX; i++)
+		tape[i] = BLANK;
+	strcpy(&tape[STARTING_INDEX], inputString);
+	for (int i = STARTING_INDEX+length; i < TAPE_DIM; i++)
+		tape[i] = BLANK;
+	tape[TAPE_DIM-1] = '\0';
 }
 
 /***************************************************************
@@ -181,6 +177,10 @@ void insertTransitionInGraph(int s, char in, char out, char m, int n_s) {
 	}
 	new->next = succ;
 	curr->next = new;
+	
+	new = NULL;
+	free(new);
+	
 	return;
 }
 
@@ -188,9 +188,6 @@ void insertTransitionInGraph(int s, char in, char out, char m, int n_s) {
 * Executes the Turing Machine
 *****************************************************************/
 int execute(char * tape, int index, int curr_state, int iteration) {
-	
-	char newTape[TAPE_DIM];
-	state *p = states[curr_state];
 	
 	if (curr_state == accState) {
 		/*printf("\n\n******************************************************");
@@ -213,10 +210,16 @@ int execute(char * tape, int index, int curr_state, int iteration) {
 		return NO;
 	}
 		
+	char newTape[TAPE_DIM];
+	state *p = states[curr_state];
+	
 	while (p != NULL) {
 		if (p->in == tape[index]) {
 			strcpy(newTape, tape);
 			newTape[index] = p->out;
+			
+			//printTape(index, newTape);
+			
 			//printf("\n%d %c %c %c %d -> iteration: %d", curr_state, p->in, p->out, p->move, p->next_state, iteration);
 			//printf("\n%s", &tape[STARTING_INDEX]);
 			//printf("\n%s", &newTape[STARTING_INDEX]);
@@ -228,6 +231,7 @@ int execute(char * tape, int index, int curr_state, int iteration) {
 		}
 		p = p->next;
 	}
+	
 	return NO;
 }
 
@@ -257,4 +261,17 @@ void printGraph() {
 			}
 		}
 	}
+}
+
+/****************************************************************
+* Displays the tape in the current state
+*****************************************************************/
+void printTape(int i, char * t) {
+	printf("\n");
+	for (int j = 0; j < length; j++)
+		printf("%c", t[STARTING_INDEX+j]);
+	printf("\n");
+	for (int j = STARTING_INDEX; j < i; j++)
+		printf("%c", ' ');
+	printf("∆\n");
 }
