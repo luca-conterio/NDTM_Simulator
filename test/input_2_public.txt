@@ -1,0 +1,110 @@
+tr
+7 y y R 7
+6 b b L 6
+7 b b L 6
+3 y y L 3
+7 a a L 6
+4 _ _ R 5
+2 y y L 2
+4 x x L 4
+8 a a L 7
+6 a a L 6
+0 y y R 0
+7 b b R 7
+3 x x L 4
+2 _ _ R 0
+6 y y L 6
+1 a a R 1
+7 c c S 7
+8 y y L 7
+2 a a L 2
+0 _ _ L 3
+6 y y S 6
+8 c c L 8
+7 y y S 7
+7 a a S 7
+8 a a S 8
+7 c c R 7
+8 b b L 8
+8 y y L 8
+1 y y R 1
+8 _ _ R 0
+7 a a R 7
+6 c c L 6
+7 y y L 6
+6 c c S 6
+1 b y L 2
+2 x x L 2
+0 x x R 0
+7 _ _ L 8
+8 c c S 8
+8 a a L 8
+6 a a S 6
+8 b b S 8
+7 c c L 6
+6 _ _ R 7
+7 b b S 7
+6 b b S 6
+2 b b L 2
+0 a x R 1
+8 y y S 8
+8 b b L 7
+8 c c L 7
+acc
+5
+max
+4000
+run
+ba
+ab
+aaaabb
+bbaa
+aaaabbbbbb
+aaabbb
+bbbbaaaaaaaa
+bbbbaaaa
+bbbbbbaaaaaaaaaa
+aaaaaaaaabbbbbbbbb
+aaaaaaaaaabbbbbbbbbbbb
+bbbbbbbaaaaaaa
+aaaaaaaaaaaabbbbbbb
+bbbbbbbbaaaaaaaa
+aaaaaaaaaaaabbbbbbbbbbbbbb
+bbbbbbbbbbaaaaaaaaaa
+bbbbbbbbbbbbbbbaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaa
+bbbbbbbbbbaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaabbbbbbbbbbb
+bbbbbbbbbbbaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaabbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaa
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+end
