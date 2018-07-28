@@ -1,0 +1,11 @@
+tr
+0 a a L 0
+0 _ _ L 0
+0 _ _ L 1
+acc
+1
+max
+2000
+run
+aaa
+BBB
