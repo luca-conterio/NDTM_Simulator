@@ -10,18 +10,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define OK     	              '1'
-#define NO                    '0'
-#define UNDEF	              'U'
-#define RIGHT                 'R'
-#define LEFT  			      'L'
-#define STOP  			      'S'
-#define BLANK 			      '_'
-#define DEFAULT_PADDING_DIM   25
-#define DEFAULT_INPUT_DIM     50
-#define INPUT_INCREMENT		  50
-#define DEFAULT_STATES_DIM    25
-#define STATES_INCREMENT      5
+#define OK     	               '1'
+#define NO                     '0'
+#define UNDEF	               'U'
+#define RIGHT                  'R'
+#define LEFT  			       'L'
+#define STOP  			       'S'
+#define BLANK 			       '_'
+#define DEFAULT_PADDING_DIM     5
+#define DEFAULT_INPUT_DIM       50
+#define INPUT_INCREMENT		    50
+#define DEFAULT_STATES_DIM      25
+#define STATES_INCREMENT        5
+#define DEFAULT_TAPE_STACK_DIM  100
+#define TAPE_STACK_INCREMENT    10
+#define DEBUG 					0
 
 typedef enum {true, false} bool;
 
@@ -47,12 +50,18 @@ void addAcceptationState(int);
 void insertTransitionInGraph(int, char, char, char, int);
 void printGraph();
 void printTape(int, char *);
-void execute(char *, int, int, int);
+void execute(int, int, int, int);
+int countAccessibleTransitions(int, char);
+void initTapeStack();
+int putTapeInStack(char *);
+void popTapeFromStack(int);
 bool checkIfAccState(int);
 int nextIndex(int, char);
 char * reallocTape(int *, char *, char);
+void freeTapeStack();
 void freeResultsList();
 void insertResult(int);
+void printTapeStack();
 void printResults();
 int checkComputationResult();
 
@@ -67,6 +76,10 @@ int iterationsLimit;            				// the limit to the iteration number (to avo
 
 //int tape_dim = DEFAULT_TAPE_DIM;        // the current tape length
 char * tape;                            // the tape of the Turing Machine
+
+char ** tape_stack;						     // the stack to trace non-deterministic transition
+//int current_tape_stack_index = 0;			 // the current index on the stack
+int tape_stack_dim = DEFAULT_TAPE_STACK_DIM; // the current length of the stack array;
 
 int input_dim;							// the current length of the inputString array
 char * inputString;						// the string read from input
@@ -182,7 +195,7 @@ void addAcceptationState(int s) {
 	 }
 	 new->next = accStates;
 	 accStates = new;
- 	// free(new);
+ 	 //free(new);
  }
 
 /****************************************************************
@@ -205,7 +218,7 @@ void readInputStrings() {
 			//printf("\nRIALLOCO VETTORE INPUT (dim = %d)\n\n", input_dim);
 		}
 		
-		if (c == '\n' || (c == EOF && inputString[i-1] != '\0')) {
+		if (i != 0 && (c == '\n' || (c == EOF && inputString[i] != '\0'))) {
 			inputString[i] = '\0';
 			//printf("input string: %s\n", inputString);
 			i = 0;
@@ -224,11 +237,17 @@ void readInputStrings() {
  * Runs the actual computation, calculating the result
  *************************************************************************/
 void run() {
+	if (DEBUG) printf("\n---------------------------------------------\n");
+	if (DEBUG) printf("run 1\n");
 	initTape();
+	if (DEBUG) printf("run 2\n");
+	initTapeStack();
 	acceptString = false;
-	execute(tape, DEFAULT_PADDING_DIM, startingState, 1);
+	if (DEBUG) printf("run 3\n");
+	execute(DEFAULT_PADDING_DIM, 0, startingState, 1);
 	printf("%c\n", checkComputationResult());
 	free(tape);
+	freeTapeStack(tape_stack);
 	freeResultsList();
 }
 
@@ -245,6 +264,15 @@ void initTape() {
 	for (int i = DEFAULT_PADDING_DIM+length; i < length + 2*DEFAULT_PADDING_DIM; i++)
 		tape[i] = BLANK;
 	tape[length+2*DEFAULT_PADDING_DIM-1] = '\0';
+}
+
+//********************************************************************
+void initTapeStack() {
+	tape_stack = (char **) malloc(DEFAULT_TAPE_STACK_DIM * sizeof(char *));
+	for (int i = 0; i < DEFAULT_TAPE_STACK_DIM; i++) {
+		tape_stack[i] = NULL;
+	}
+	tape_stack[0] = tape;
 }
 
 /******************************************************************
@@ -294,63 +322,139 @@ void insertTransitionInGraph(int s, char in, char out, char m, int n_s) {
 /****************************************************************
 * Executes the Turing Machine
 *****************************************************************/
-void execute(char * currTape, int index, int curr_state, int iteration) {
-
-  if (acceptString == true) {
-	free(currTape);
-	return;
-  }
-
-  if (checkIfAccState(curr_state) == true) {
-    insertResult(OK);
-	acceptString = true;
-	free(currTape);
-    return;
-  }
-  else if (iteration == iterationsLimit) {
-    insertResult(UNDEF);
-    free(currTape);
-    return;
-  }
-
-  /* if (curr_state < 0 || curr_state >= states_num) {
-	printf("Invalid state number.\n");
-	exit(0);
-  } */
+void execute(int index, int tape_stack_index, int curr_state, int iteration) {
 	
-  transition * p = graph[curr_state];
-  int next_index;
-  bool reject = true;
+	if (acceptString == true) {
+		if (DEBUG) printf("accept\n");
+		//popTapeFromStack();
+		return;
+	}
 
-  if (index == 0) {
-	currTape = reallocTape(&index, currTape, LEFT);
-  }
-  else if (index == strlen(currTape)-1) {
-	currTape = reallocTape(&index, currTape, RIGHT);
-  }
+	if (checkIfAccState(curr_state) == true) {
+		if (DEBUG) printf("accept 2\n");
+		insertResult(OK);
+		acceptString = true;
+		//popTapeFromStack();
+		return;
+	}
+	else if (iteration == iterationsLimit) {
+		if (DEBUG) printf("undefined\n");
+		insertResult(UNDEF);
+		popTapeFromStack(tape_stack_index);
+		return;
+	}
 
-  char * newTape = (char *) malloc((strlen(currTape)+1) * sizeof(char));
-  strcpy(newTape, currTape);
+	/* if (curr_state < 0 || curr_state >= states_num) {
+		printf("Invalid state number.\n");
+		exit(0);
+	} */
+		
+	transition * p = graph[curr_state];
+	if (DEBUG) printf("\nTape stack index: %d\n", tape_stack_index);
+	if (DEBUG) printf("Current tape: %s\n", tape_stack[tape_stack_index]);
+	char * currTape = tape_stack[tape_stack_index];
 
-  while (p != NULL) {
-    if (p->in == currTape[index]) {
-      reject = false;
-      newTape[index] = p->out;
-      next_index = nextIndex(index, p->move);
-      //printf("%d %c %c %c %d -> iteration: %d\n", curr_state, p->in, p->out, p->move, p->next_state, iteration);
-      //printTape(index, currTape);
-      execute(newTape, next_index, p->next_state, iteration+1);
-    }
-    p = p->next;
-  }
+	if (index == 0) {
+		if (DEBUG) printf("realloc tape left\n");
+		currTape = reallocTape(&index, currTape, LEFT);
+	}
+	else if (index == strlen(currTape)-1) {
+		if (DEBUG) printf("realloc tape right\n");
+		currTape = reallocTape(&index, currTape, RIGHT);
+	}
+	
+	int transitions_number = countAccessibleTransitions(curr_state, currTape[index]);
+	if (DEBUG) printf("Transitions number: %d\n", transitions_number);
 
-  if (reject == true) {
-    insertResult(NO);
-	free(newTape);
-  }
+	bool reject = true;
+	
+	while (p != NULL) {
+		if (p->in == currTape[index]) {
+			reject = false;
+			int next_index = nextIndex(index, p->move);
+			
+			if (DEBUG) printf("%d %c %c %c %d -> iteration: %d\n", curr_state, p->in, p->out, p->move, p->next_state, iteration);
+			if (DEBUG) printf("Next index: %d\n", next_index);
+			if (DEBUG) printTape(index, currTape);
+			
+			if (transitions_number >= 2) {
+				if (DEBUG) printf("\n##########   NON DETERMINISTIC TRANSITION   ##########\n");
+				char * newTape = (char *) malloc((strlen(currTape)+1) * sizeof(char));
+				strcpy(newTape, currTape);
+				newTape[index] = p->out;
+				if (DEBUG) printf("New tape: %s\n", newTape);
+				tape_stack_index = putTapeInStack(newTape);
+				if (DEBUG) printf("\nNew tape stack index: %d\n", tape_stack_index);
+				newTape = NULL;
+				free(newTape);
+			}
+			else
+				currTape[index] = p->out;
 
-  free(p);
-  return;
+			execute(next_index, tape_stack_index, p->next_state, iteration+1);
+		}
+		p = p->next;
+	}
+
+	if (transitions_number == true) {
+		if (DEBUG) printf("reject\n");
+		insertResult(NO);
+		popTapeFromStack(tape_stack_index);
+	}
+	
+	free(p);
+	return;
+}
+
+//****************************************************************
+int countAccessibleTransitions(int state, char c) {
+	transition * p = graph[state];
+	int i = 0;
+	while (p != NULL) {
+		if (p->in == c) 
+			i++;
+		p = p->next;
+	}
+	free(p);
+	return i;
+}
+
+//****************************************************************
+int putTapeInStack(char * toBeAdded) {
+	
+	int tape_stack_index;
+	bool ok = false;
+	for (tape_stack_index = 0; tape_stack_index < tape_stack_dim && !ok; tape_stack_index++)
+		if (tape_stack[tape_stack_index] == NULL) {
+			ok = true;
+		}
+	
+	if (tape_stack_index == tape_stack_dim) {
+		tape_stack = (char **) realloc(tape_stack, DEFAULT_TAPE_STACK_DIM+tape_stack_dim * sizeof(char *));
+		for (int i = tape_stack_dim; i < DEFAULT_TAPE_STACK_DIM+tape_stack_dim; i++) {
+			tape_stack[i] = NULL;
+		}
+		tape_stack_index = tape_stack_dim;
+		tape_stack_dim = tape_stack_dim + DEFAULT_TAPE_STACK_DIM;
+	}
+	
+	tape_stack[tape_stack_index] = toBeAdded;
+
+	if (DEBUG) printTapeStack();
+	
+	return tape_stack_index;
+}
+
+//****************************************************************
+void popTapeFromStack(int tape_stack_index) {
+	
+	if (DEBUG) printTapeStack();
+	
+	//free(tape_stack[tape_stack_index]);
+	if (tape_stack_index > 0) {
+		tape_stack[tape_stack_index] = NULL;
+		//tape_stack_index--;
+	}
 }
 
 /***********************************************************************
@@ -442,6 +546,14 @@ int checkComputationResult() {
 	return NO;              // only rejection values ---> REJECT STRING
 }
 
+//*************************************************************************
+void freeTapeStack() {
+	for (int i = 0; i < tape_stack_dim; i++) {
+		free(tape_stack[i]);
+	}
+	free(tape_stack);
+}
+
 /**************************************************************************
  * Frees the results list
  **************************************************************************/
@@ -483,6 +595,16 @@ void printTape(int i, char * t) {
 	for (int j = 0; j < i; j++)
 		printf("%c", ' ');
 	printf("∆\n");
+}
+
+//***************************************************************
+void printTapeStack() {
+	printf("\nTape stack: ");
+	for (int i = 0; i < tape_stack_dim; i++) {
+		if (tape_stack[i] != NULL)
+			printf("\n%d: %s", i, tape_stack[i]);
+	}
+	printf("\n");
 }
 
 /****************************************************************
