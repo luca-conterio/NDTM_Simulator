@@ -1,0 +1,13 @@
+tr
+0 a a R 1
+0 b b R 2
+1 b b R 0
+acc
+2
+max
+5
+run
+abababababab
+abab
+bbbb
+aaaa
