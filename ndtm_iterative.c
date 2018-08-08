@@ -11,19 +11,19 @@
 #include <string.h>
 #include <unistd.h>
 
-#define ACCEPT                 '1'
-#define REJECT                 '0'
-#define UNDEFINED	           'U'
-#define RIGHT                   1
-#define LEFT  			       -1
-#define STOP  			        0
-#define BLANK 			       '_'
-#define DEFAULT_INPUT_DIM       256
-#define INPUT_INCREMENT		    128
+#define ACCEPT                  '1'
+#define REJECT                  '0'
+#define UNDEFINED	            'U'
+#define RIGHT                    1
+#define LEFT  			        -1
+#define STOP  			         0
+#define BLANK 			        '_'
+#define DEFAULT_INPUT_DIM      256
+#define INPUT_INCREMENT		   128
 #define DEFAULT_PADDING_DIM     16
 #define DEFAULT_STATES_DIM      16
 #define STATES_INCREMENT        16
-#define DEBUG 					0
+#define DEBUG 					 0
 
 typedef enum {true, false} bool;
 
@@ -398,6 +398,9 @@ void removeFromQueue(transition ** queue, transition ** tail) {
 		*tail = NULL;
 
 	toBeRemoved->next = NULL;
+
+	if (DEBUG) printf("removed : %d %c %c %d %d %s %d\n", toBeRemoved->state, toBeRemoved->in, toBeRemoved->out, toBeRemoved->move, toBeRemoved->next_state, toBeRemoved->tape, toBeRemoved->index);
+
 	free(toBeRemoved);
 }
 
@@ -407,10 +410,9 @@ void removeFromQueue(transition ** queue, transition ** tail) {
 char * reallocTape(char * currTape, int * index) {
 
 	int length = strlen(currTape)+1;
-	char * tapeCopy;
 
 	if (*index == -1) {
-		tapeCopy = (char *) malloc(length);
+		char * tapeCopy = (char *) malloc(length);
 		strcpy(tapeCopy, currTape);
 		currTape = realloc(currTape, length + DEFAULT_PADDING_DIM);
 		for (int i = 0; i < DEFAULT_PADDING_DIM; i++)
@@ -567,7 +569,7 @@ int main(int argc, char * argv[]) {
 
 	readInputStrings();
 
-    if (DEBUG) freeGraph();
+    freeGraph();
 
 	return 0;
 }
