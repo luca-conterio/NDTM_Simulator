@@ -23,6 +23,7 @@
 #define DEFAULT_PADDING_DIM     16
 #define DEFAULT_STATES_DIM      16
 #define STATES_INCREMENT        16
+#define POSSIBLE_CHARS_NUM	   127
 #define DEBUG 					 0
 
 typedef enum {true, false} bool;
@@ -36,9 +37,14 @@ typedef struct graph_node {       // node of the graph
 } graph_node;
 
 typedef struct state {
-	graph_node * transitionsList;
+	graph_node ** transitions;
 	bool isAccState;
 } state;
+
+typedef struct tm_tape {
+	char * string;
+	int pointers_num;
+} tm_tape;
 
 typedef struct transition {
   int state;
@@ -47,7 +53,7 @@ typedef struct transition {
   int move;
   int next_state;
   int index;
-  char * tape;
+  tm_tape * tape;
   struct transition * next;
 } transition;
 
@@ -57,8 +63,8 @@ void insertNodeInGraph(int, char, char, int, int);
 void readInputStrings();
 void run();
 void executeTM();
-char * copyTape(char *);
-void putInQueue(transition **, transition **, int, graph_node *, char *, int);
+tm_tape * copyTape(tm_tape *);
+void putInQueue(transition **, transition **, int, graph_node *, tm_tape *, int);
 void removeFromQueue(transition **, transition **);
 char * reallocTape(char *, int *);
 void printGraph();
@@ -74,7 +80,7 @@ state * graph;				    // array containing all the states read from input
 transition * transitionsQueue = NULL;              // the queue of current possible transitions
 transition * transitionsQueueTail = NULL;
 
-char * tape;                            // the tape of the Turing Machine
+tm_tape * tape;                            // the tape of the Turing Machine
 
 int startingState = 0;                  // the starting state of the Turing Machine
 long int currIteration;				// the current iteration
@@ -86,12 +92,14 @@ bool atLeastAnUndefinedPath = false;    // true when at least a path returns UND
 int input_dim;							// the current length of the inputString array
 char * inputString;						// the string read from input
 
+int copiesNum = 0;
+
 /***************************************************************
  * Initializes graph (states vector) elements to NULL
  ***************************************************************/
 void initGraph() {
 	for(int i = 0; i < DEFAULT_STATES_DIM; i++) {
-		graph[i].transitionsList = NULL;
+		graph[i].transitions = NULL;
 		graph[i].isAccState = false;
 	}
 }
@@ -142,7 +150,7 @@ void readMTStructure() {
 			graph = (state *) realloc(graph, newDim * sizeof(state));
 			// re-initialize states vector (graph) with NULL in new positions
 			for (int i = states_dim; i < newDim; i++) {
-				graph[i].transitionsList = NULL;
+				graph[i].transitions = NULL;
 				graph[i].isAccState = false;
 			}
 			states_dim = newDim;
@@ -215,7 +223,6 @@ void insertNodeInGraph(int s, char in, char out, int m, int n_s) {
 
 	graph_node * new = (graph_node *) malloc(sizeof(graph_node));
 	if (new != NULL) {
-		new->next = NULL;
 		new->in = in;
 		new->out = out;
 		new->move = m;
@@ -226,38 +233,31 @@ void insertNodeInGraph(int s, char in, char out, int m, int n_s) {
 		exit(0);
 	}
 
-	if (graph[s].transitionsList == NULL) {   // insert when list is empty
-		graph[s].transitionsList = new;
+	if (graph[s].transitions == NULL) {   // insert when list is empty
+		graph[s].transitions = (graph_node **) malloc(POSSIBLE_CHARS_NUM * sizeof(graph_node *));
+		for (int i = 0; i < POSSIBLE_CHARS_NUM; i++)
+			graph[s].transitions[i] = NULL;
+		graph[s].transitions[in] = new;
 		new->next = NULL;
 		return;
 	}
 
-	if (new->in <= graph[s].transitionsList->in) { // insert as first element
-		new->next = graph[s].transitionsList;
-		graph[s].transitionsList = new;
-		return;
-	}
+	new->next = graph[s].transitions[in];
+	graph[s].transitions[in] = new;
 
-	graph_node *curr = graph[s].transitionsList;          // insert in order (includes insertion as last)
-	graph_node *succ = curr->next;
-	while (succ != NULL && new->in > succ->in) {
-		curr = succ;
-		succ = succ->next;
-	}
-
-	new->next = succ;
-	curr->next = new;
 }
 
 //***************************************
 void run() {
-	tape = (char *) malloc(strlen(inputString) + 1);
-	strcpy(tape, inputString);
+	tape = (tm_tape *) malloc(sizeof(tm_tape));
+	tape->string = (char *) malloc(strlen(inputString) + 1);
+	tape->pointers_num = 0;
+	strcpy(tape->string, inputString);
 	free(inputString);
-    acceptString = false;
-    atLeastAnUndefinedPath = false;
+  acceptString = false;
+  atLeastAnUndefinedPath = false;
 	currIteration = 1;
-    executeTM();
+  executeTM();
 	if (acceptString == true)             // at least a path accpets the string ---> ACCEPT STRING
         printf("%c\n", ACCEPT);
 	else if (atLeastAnUndefinedPath == true)   // at least an undefined value ---> UNDEFINED
@@ -268,16 +268,16 @@ void run() {
 
 //***************************************
 void executeTM() {
+
 	int accessibleTransitions = 0;
-	graph_node * p = graph[0].transitionsList;
+	graph_node * p = graph[0].transitions[tape->string[0]];
 
 	// initialize for starting state (0) and starting index (0)
 	while (p != NULL) {
-		if (tape[0] == p->in)
-			accessibleTransitions++;
-		if (tape[0] == p->in && accessibleTransitions < 2)
+		accessibleTransitions++;
+		if (accessibleTransitions < 2)
 			putInQueue(&transitionsQueue, &transitionsQueueTail, 0, p, tape, 0);
-		else if (tape[0] == p->in && accessibleTransitions >= 2)
+		else if (accessibleTransitions >= 2)
 			putInQueue(&transitionsQueue, &transitionsQueueTail, 0, p, copyTape(tape), 0);
 		p = p->next;
 	}
@@ -304,23 +304,30 @@ void executeTM() {
 			}
 
 			else {
-				if (currTransition->in == currTransition->tape[currTransition->index]) {
+				//char * currTape = currTransition->tape->string;
 
-					currTransition->tape[currTransition->index] = currTransition->out;
+				if (currTransition->in == currTransition->tape->string[currTransition->index]) {
+
+					currTransition->tape->string[currTransition->index] = currTransition->out;
+
 					int next_index = currTransition->index + currTransition->move;
-					if (next_index == -1 || next_index == strlen(currTransition->tape)-1)
-						currTransition->tape = reallocTape(currTransition->tape, &next_index);
+					if (next_index == -1 || next_index == strlen(currTransition->tape->string)-1)
+						currTransition->tape->string = reallocTape(currTransition->tape->string, &next_index);
 
-					p = graph[next_state].transitionsList;
+					if (graph[next_state].transitions != NULL) {
+						char currChar = currTransition->tape->string[next_index];
+						graph_node * p = graph[next_state].transitions[currChar];
 
-					while (p != NULL) {
-						if (p->in == currTransition->tape[next_index])
+						while (p != NULL) {
 							accessibleTransitions++;
-						if (currTransition->tape[next_index] == p->in && accessibleTransitions < 2)
-							putInQueue(&newQueue, &newQueueTail, next_state, p, currTransition->tape, next_index);
-						else if (currTransition->tape[next_index] == p->in && accessibleTransitions >= 2)
-							putInQueue(&newQueue, &newQueueTail, next_state, p, copyTape(currTransition->tape), next_index);
-						p = p->next;
+							if (accessibleTransitions < 2)
+								putInQueue(&newQueue, &newQueueTail, next_state, p, currTransition->tape, next_index);
+							else if (accessibleTransitions >= 2) {
+								putInQueue(&newQueue, &newQueueTail, next_state, p, copyTape(currTransition->tape), next_index);
+								//copiesNum++;
+							}
+							p = p->next;
+						}
 					}
 				}
 
@@ -345,9 +352,11 @@ void executeTM() {
 /****************************************************************
 * Returns a copy of the string passed as parameter
 *****************************************************************/
-char * copyTape(char * currTape) {
-	char * newTape = (char *) malloc(strlen(currTape)+1);
-	strcpy(newTape, currTape);
+tm_tape * copyTape(tm_tape * currTape) {
+	tm_tape * newTape = (tm_tape *) malloc(sizeof(tm_tape));
+	newTape->string = (char *) malloc(strlen(currTape->string)+1);
+	strcpy(newTape->string, currTape->string);
+	newTape->pointers_num = 0;
 
 	if (DEBUG) {
 		printf("\n\n###########   COPIO   ##########\n");
@@ -360,7 +369,7 @@ char * copyTape(char * currTape) {
 /****************************************************************
 * Puts a new element in the queue passed as parameter
 *****************************************************************/
-void putInQueue(transition ** queue, transition ** tail, int state, graph_node * p, char * tape, int index) {
+void putInQueue(transition ** queue, transition ** tail, int state, graph_node * p, tm_tape * tape, int index) {
 
 	transition * new = (transition *) malloc(sizeof(transition));
 
@@ -371,6 +380,7 @@ void putInQueue(transition ** queue, transition ** tail, int state, graph_node *
 	new->next_state = p->next_state;
 	new->index = index;
 	new->tape = tape;
+	new->tape->pointers_num++;
 
 	if (*queue == NULL) {
 		*queue = new;
@@ -398,8 +408,14 @@ void removeFromQueue(transition ** queue, transition ** tail) {
 		*tail = NULL;
 
 	toBeRemoved->next = NULL;
+	toBeRemoved->tape->pointers_num--;
 
-	if (DEBUG) printf("removed : %d %c %c %d %d %s %d\n", toBeRemoved->state, toBeRemoved->in, toBeRemoved->out, toBeRemoved->move, toBeRemoved->next_state, toBeRemoved->tape, toBeRemoved->index);
+	if (DEBUG) printf("removed : %d %c %c %d %d %s %d\n", toBeRemoved->state, toBeRemoved->in, toBeRemoved->out, toBeRemoved->move, toBeRemoved->next_state, toBeRemoved->tape->string, toBeRemoved->index);
+
+	if (toBeRemoved->tape->pointers_num == 0) {
+		free(toBeRemoved->tape->string);
+		free(toBeRemoved->tape);
+	}
 
 	free(toBeRemoved);
 }
@@ -420,39 +436,16 @@ char * reallocTape(char * currTape, int * index) {
 		strcpy(&currTape[DEFAULT_PADDING_DIM], tapeCopy);
 		free(tapeCopy);
 		*index = *index + DEFAULT_PADDING_DIM;
-  	}
-  	else {
+  }
+  else {
 		currTape = realloc(currTape, length + DEFAULT_PADDING_DIM);
 		for (int i = length-1; i < length + DEFAULT_PADDING_DIM; i++)
 			currTape[i] = BLANK;
-  	}
+  }
 
 	currTape[length+DEFAULT_PADDING_DIM-1] = '\0';
 	if (DEBUG) printf("\nRIALLOCO VETTORE TAPE (dim = %d)\n\n", (int) strlen(currTape));
 	return currTape;
-}
-
-//****************************************************************
-int countAccessibleTransitions(int state, char c) {
-	graph_node * p = graph[state].transitionsList;
-	int i = 0;
-	while (p != NULL) {
-		if (p->in == c)
-			i++;
-		p = p->next;
-	}
-	return i;
-}
-
-/***************************************************************************
- * Calculates the correct computation results according to the results list
- ***************************************************************************/
-char checkComputationResult() {
-	if (acceptString == true)             // at least a path accpets the string ---> ACCEPT STRING
-        return ACCEPT;
-	if (atLeastAnUndefinedPath == true)   // at least an undefined value ---> UNDEFINED
-		return UNDEFINED;
-	return REJECT;                        // only rejection values ---> REJECT STRING
 }
 
 /*****************************************************************
@@ -463,14 +456,17 @@ void freeGraph() {
 	graph_node * prec = NULL;
 	graph_node * succ = NULL;
 	while (i < states_dim) {
-		if (graph[i].transitionsList != NULL) {
-			prec = graph[i].transitionsList;
-			succ = graph[i].transitionsList;
-			while (succ != NULL) {
-				succ = succ->next;
-				free(prec);
-				prec = succ;
+		if (graph[i].transitions != NULL) {
+			for (int j = 0; j < POSSIBLE_CHARS_NUM; j++) {
+				prec = graph[i].transitions[j];
+				succ = graph[i].transitions[j];
+				while (succ != NULL) {
+					succ = succ->next;
+					free(prec);
+					prec = succ;
+				}
 			}
+			free(graph[i].transitions);
 		}
 		i++;
 	}
@@ -485,6 +481,7 @@ void freeGraph() {
 
 	 while(transitionsQueue != NULL) {
 		 transitionsQueue = transitionsQueue->next;
+		 free(p->tape->string);
 		 free(p->tape);
 		 free(p);
 		 p = transitionsQueue;
@@ -500,17 +497,19 @@ void freeGraph() {
 void printGraph() {
 	graph_node * p;
 	for (int i = 0; i < states_num; i++) {
-		if (graph[i].transitionsList != NULL) {
-			p = graph[i].transitionsList;
-			while (p != NULL) {
-				char m;
-				switch(p->move) {
-					case 0: m = 'S'; break;
-					case 1: m = 'R'; break;
-					case -1: m = 'L'; break;
+		if (graph[i].transitions != NULL) {
+			for (int j = 0; j < POSSIBLE_CHARS_NUM; j++) {
+				p = graph[i].transitions[j];
+				while (p != NULL) {
+					char m;
+					switch(p->move) {
+						case 0: m = 'S'; break;
+						case 1: m = 'R'; break;
+						case -1: m = 'L'; break;
+					}
+					printf("\n%d %c %c %c %d", i, p->in, p->out, m, p->next_state);
+					p = p->next;
 				}
-				printf("\n%d %c %c %c %d", i, p->in, p->out, m, p->next_state);
-				p = p->next;
 			}
 		}
 	}
@@ -533,7 +532,7 @@ void printQueue() {
 				case 1: m = 'R'; break;
 				case -1: m = 'L'; break;
 			}
-			printf("%d %c %c %d %d %s %d\n", p->state, p->in, p->out, m, p->next_state, p->tape, p->index);
+			printf("%d %c %c %d %d %s %d\n", p->state, p->in, p->out, m, p->next_state, p->tape->string, p->index);
 			p = p->next;
 		}
 		printf("\n");
@@ -569,7 +568,8 @@ int main(int argc, char * argv[]) {
 
 	readInputStrings();
 
-    freeGraph();
+    //freeGraph();
+	//printf("number of copies: %d\n", copiesNum);
 
 	return 0;
 }
