@@ -12,4 +12,4 @@ The repository contains three versions of the project:
 
 To simulate the infinite machine tape, the third solution allows faster allocation of new blank characters, when the machine head tries to go to the left/right of the input string. In the first and second solutions it is necessary to reallocate the whole tape every time, adding new blank characters.
   
-All algorithm also implement a basic machine loop detection.  
+A basic machine loop detection is also implemented in all the three algorithms.  
