@@ -38,32 +38,32 @@ The simulator has three possible outputs:
 
 ## Example
 Here is given an example of Turing Machine that accepts strings composed by a substring and the same substring written from the last letter to the first one, for example "abccba":  
-'''  
-tr
-0 a a R 0
-0 b b R 0
-0 a c R 1
-0 b c R 2
-1 a c L 3
-2 b c L 3
-3 c c L 3
-3 a c R 4
-3 b c R 5
-4 c c R 4
-4 a c L 3
-5 c c R 5
-5 b c L 3
-3 _ _ R 6
-6 c c R 6
-6 _ _ S 7
-acc
-7
-max
-800
-run
-aababbabaa
-aababbabaaaababbabaa
-aababbabaaaababbabaab
-aababbabaaaababbabaabbaababbabaaaababbabaa
-aababbabbaaababbabaabbaababbabaaaababbabaa
-'''
+```  
+tr  
+0 a a R 0  
+0 b b R 0  
+0 a c R 1  
+0 b c R 2  
+1 a c L 3  
+2 b c L 3  
+3 c c L 3  
+3 a c R 4  
+3 b c R 5  
+4 c c R 4  
+4 a c L 3  
+5 c c R 5  
+5 b c L 3  
+3 _ _ R 6  
+6 c c R 6  
+6 _ _ S 7  
+acc  
+7  
+max  
+800  
+run  
+aababbabaa  
+aababbabaaaababbabaa  
+aababbabaaaababbabaab  
+aababbabaaaababbabaabbaababbabaaaababbabaa  
+aababbabbaaababbabaabbaababbabaaaababbabaa  
+```
