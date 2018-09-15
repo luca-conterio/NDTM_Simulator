@@ -67,3 +67,11 @@ aababbabaaaababbabaab
 aababbabaaaababbabaabbaababbabaaaababbabaa  
 aababbabbaaababbabaabbaababbabaaaababbabaa  
 ```
+The output will be:
+```
+1  
+1  
+0  
+U  
+0
+```
