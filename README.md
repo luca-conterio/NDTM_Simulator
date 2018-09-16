@@ -1,6 +1,6 @@
 # Turing Machine Simulator
 
-Algorithms and Data Structures - Politecnico di Milano, 2017/2018
+Algorithms and Data Structures - Politecnico di Milano, 2018
 
 ## Overview
 A simulator for non-deterministic single tape acceptor Turing Machine.
