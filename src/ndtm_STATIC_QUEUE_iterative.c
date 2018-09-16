@@ -20,8 +20,8 @@
 #define STOP  			         0
 #define DEFAULT_STATES_DIM     256
 #define STATES_INCREMENT       256
-#define POSSIBLE_CHARS_NUM	    58
-#define MIN_CHAR				65
+#define POSSIBLE_CHARS_NUM	   127
+#define MIN_CHAR				 0
 #define QUEUE_DIM			   512
 #define TAPE_CHUNK_LENGTH	   512
 
