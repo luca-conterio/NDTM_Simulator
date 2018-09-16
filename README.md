@@ -37,7 +37,7 @@ The simulator has three possible outputs:
 - `U` will be the result if the computation exceeds the maximun number of steps without reaching an acceptation state. 
 
 ## Example
-Here is given an example of Turing Machine that accepts strings composed by a substring and the same substring written from the last letter to the first one, for example `abaaba`:  
+Here is given an example of Turing Machine that accepts strings composed by a substring and the same substring written from the last letter to the first one, for example `bbaabb`:  
 ```  
 tr  
 0 a a R 0  
