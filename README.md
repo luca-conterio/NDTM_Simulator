@@ -16,28 +16,28 @@ A basic machine loop detection is also implemented in all the three algorithms.
 
 ## Conventions
 - tape symbols are chars, while states are integers.
-- the char '_' indicates the blank character.
-- the machine always starts from state 0 and from the first character on the input string.
-- if state N exists, all states from 0 to N-1 exist too.
+- the char `_` indicates the blank character.
+- the machine always starts from state `0` and from the first character on the input string.
+- if state `N` exists, all states from `0` to `N-1` exist too.
 - acceptation states doesn't have any outgoing transition.
 - the tape has infinite length in both left and right directions and contains the blank character in every position.
-- characters 'R', 'L' and 'S' are used for machine head's movements.
+- characters `R`, `L` and `S` are used for machine head's movements.
 
 ## Input
 The input that the simulator needs has 4 parts:
-1. the first part, preceded by "tr", contains the list of transitions, one on each line (es: 0 a b R 1 indicates that this transition starts from state 0 and goes to state 2 reading 'a' on the tape, writing 'b' and moving the head on the right). 
-2. the next part, starting with "acc", contains the list of acceptation states, one on each line.
-3. to avoid infinite computations, after the word "max", a maximum number of machine steps is given.
-4. finally, after the word "run" there's the list of strings to be computed, separated by a new line.
+1. the first part, preceded by `tr`, contains the list of transitions, one on each line (es: `0 a b R 1` indicates that this transition starts from state `0` and goes to state `1` reading `a` on the tape, writing `b` and moving the head on the right). 
+2. the next part, starting with `acc`, contains the list of acceptation states, one on each line.
+3. to avoid infinite computations, after the word `max`, a maximum number of machine steps is given.
+4. finally, after the word `run` there's the list of strings to be computed, separated by a new line.
 
 ## Output
 The simulator has three possible outputs:
-- if the machine reaches an acceptance state, the output for that string will be '1'.
-- the machine will give a '0' as a result if the computation ends without reaching an acceptation state.
-- 'U' will be the result if the computation exceeds the maximun number of steps without reaching an acceptation state. 
+- if the machine reaches an acceptance state, the output for that string will be `1`.
+- the machine will give a `0` as a result if the computation ends without reaching an acceptation state.
+- `U` will be the result if the computation exceeds the maximun number of steps without reaching an acceptation state. 
 
 ## Example
-Here is given an example of Turing Machine that accepts strings composed by a substring and the same substring written from the last letter to the first one, for example "abaaba":  
+Here is given an example of Turing Machine that accepts strings composed by a substring and the same substring written from the last letter to the first one, for example `abaaba`:  
 ```  
 tr  
 0 a a R 0  
