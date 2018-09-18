@@ -67,7 +67,7 @@ aababbabaaaababbabaab
 aababbabaaaababbabaabbaababbabaaaababbabaa  
 aababbabbaaababbabaabbaababbabaaaababbabaa  
 ```
-The output will be:
+The relative output will be:
 ```
 1  
 1  
